@@ -1,0 +1,60 @@
+---
+- hosts: all
+  remote_user: macdre
+  vars:
+    hadoop_version: 2.7.3
+    spark_version: 2.1.0
+    spark_for_hadoop_version: 2.7
+    java_version: 8
+
+  tasks:
+  - name: Update all packages to the latest version
+    apt:
+      upgrade: dist
+    become: yes
+    become_method: sudo
+
+  - name: Run "apt-get update" to ensure apt repos are up to date
+    apt:
+      update_cache: yes
+    become: yes
+    become_method: sudo
+
+  - name: Install latest requested version of openjdk
+    apt:
+      name: openjdk-{{ java_version }}-jdk
+      state: latest
+      install_recommends: no
+    become: yes
+    become_method: sudo
+
+  - name: Create target directory
+    file: path=~/wc-ansible state=directory
+
+  - name: Download and extract Hadoop
+    unarchive:
+      src: http://muug.ca/mirror/apache-dist/hadoop/common/hadoop-{{ hadoop_version }}/hadoop-{{ hadoop_version }}.tar.gz
+      dest: ~/wc-ansible/
+      remote_src: True
+
+  - name: Download and extract Spark
+    unarchive:
+      src: http://d3kbcqa49mib13.cloudfront.net/spark-{{ spark_version }}-bin-hadoop{{ spark_for_hadoop_version }}.tgz
+      dest: ~/wc-ansible/
+      remote_src: True
+
+  - name: Copy the Hadoop word count script to the node
+    copy:
+      src: "{{ playbook_dir }}/HadoopWordCount.java"
+      dest: ~/wc-ansible/.
+
+  - name: Copy the Spark word count script to the node
+    copy:
+      src: "{{ playbook_dir }}/spark-wordcount.py"
+      dest: ~/wc-ansible/.
+
+  - name: Copy the wordcount testing script to the node
+    copy:
+      src: "{{ playbook_dir }}/wordcount-test.sh"
+      dest: ~/wc-ansible/.
+

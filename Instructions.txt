@@ -1,0 +1,66 @@
+This file contains intructions to execute the scripts included in this assignment submission
+
+By: Ross MacDonald A00410617
+For: MCDA5570 Assignment01
+
+Instructions:
+
+First, create a docker image that will be used to provision an Azure VM.
+Using the provided Docker file, 'Docker-ansible-azure', create a new Docker Image:
+> docker build -t <your-image-name> -f Docker-ansible-azure .
+> docker run --detach --name <your-container-name> -it <your-image-name> bash
+
+Now let's copy the project files we need over to the docker container:
+> docker cp HadoopWordCount.java <your-container-name>:/root/.
+> docker cp spark-wordcount.py <your-container-name>:/root/.
+> docker cp wordcount-test.sh <your-container-name>:/root/.
+> docker cp wordcount-playbook.yml <your-container-name>:/root/.
+> docker cp wordcount-the-bash-way.sh <your-container-name>:/root/.
+
+Once complete, log into the image and verify the setup:
+> docker exec -it <your-container-name> bash
+>> az --version
+>> ansible --version
+
+If both version commands come back with version output, then the docker container is ready to use.
+
+Now provision an Azure VM using the following steps within the docker container:
+>> az login
+>> az group create --name <resource-group-name> --location canadaeast
+>> az vm create --image "Canonical:UbuntuServer:16.04-DAILY-LTS:16.04.201702020" --generate-ssh-keys --resource-group <resource-group-name> --name <vm-name> --admin-username <username> --size Standard_A0
+
+The vm create command should return an IP address of the newly created VM. Use it to log into the VM.
+>> ssh <username>@<vm-ip-address>
+
+If a login is successful, log back out and we will copy the project files over to the VM and log back into it.
+>> scp HadoopWordCount.java <username>@<vm-ip-address>:~
+>> scp spark-wordcount.py <username>@<vm-ip-address>:~
+>> scp wordcount-test.sh <username>@<vm-ip-address>:~
+>> scp wordcount-the-bash-way.sh <username>@<vm-ip-address>:~
+>> ssh <username>@<vm-ip-address>
+
+Now we can execute the bash-based setup by running:
+>>> ./wordcount-the-bash-way.sh
+If the install completes successfully, a message will be displayed instructing the user to run the test script:
+>>> ./wordcount-test.sh
+
+If the tests pass, a sample output of each job will be printed to the screen.
+This concludes the bash example. Now on to the ansible example. Log out of the Azure VM
+>>> exit
+
+Create a new VM to test the ansible way of installing and configuring the system:
+>> az vm create --image "Canonical:UbuntuServer:16.04-DAILY-LTS:16.04.201702020" --generate-ssh-keys --resource-group <resource-group-name> --name <vm-name> --admin-username <username> --size Standard_A0
+
+Again, record the new IP created for this VM. We will put this in the hosts file so ansible knows what computer to configure:
+>> echo <vm-ip-address>:22 >> /etc/ansible/hosts
+
+Now execute the ansible playbook to configure this VM:
+>> ansible-playbook 
+
+If all tasks complete with an OK/Changed message, then we will login to the VM to test the install:
+>> ssh <username>@<vm-ip-address>
+>>> cd wc-ansible/
+>>> chmod +x wordcount-test.sh
+>>> ./wordcount-test.sh
+If the tests pass, a sample output of each job will be printed to the screen.
+This concludes the ansible example and the assignment!
